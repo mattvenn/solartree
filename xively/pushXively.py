@@ -11,6 +11,7 @@ import logging.handlers
 import argparse
 import fcntl
 from xively import xively
+from post_data import cursive_data
 
 keys = [ "batt-voltage", "batt-current", "array-voltage", "array-current", "batt-temp", "power-in", "power-out" ]
 
@@ -89,12 +90,20 @@ def push_data(data):
         return
 
     # xively parameters
-    xively_t = xively(args.feed_id, logging, keyfile=args.keyfile, uptime=True)
+    if args.xively:
+        xively_t = xively(args.feed_id, logging, keyfile=args.keyfile, uptime=True)
+        for key in keys:
+            xively_t.add_datapoint(key, data[key])
+        xively_t.start()
+    else:
+        # then we just update cursive data datastore with the one parameter
+        datastore_id = 13
+        key = 'value'
+        value = data["power-out"]
 
-    for key in keys:
-        xively_t.add_datapoint(key, data[key])
-
-    xively_t.start()
+        cd = cursive_data(datastore_id)
+        cd.add_datapoint(key, value)
+        cd.start()
 
 
 if __name__ == '__main__':
@@ -106,6 +115,9 @@ if __name__ == '__main__':
 #  argparser.add_argument('--no-modbus',
 #    action='store_const', dest='no_modbus', const=True, default=False,
 #      help="don't try to use modbus")
+  argparser.add_argument('--xively',
+    action='store_const', dest='xively', const=True, default=False,
+      help="use xively (otherwise post direct to cursive data")
   argparser.add_argument('--keyfile',
     action='store', dest='keyfile', default="xively.key",
       help="where the api key is stored")
