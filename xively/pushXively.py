@@ -17,7 +17,7 @@ keys = [ "batt-voltage", "batt-current", "array-voltage", "array-current", "batt
 
 
 # configure the client logging
-log = logging.getLogger('solartree')
+log = logging.getLogger('xively')
 # has to be set to debug as is the root logger
 log.setLevel(logging.DEBUG)
 
@@ -76,7 +76,8 @@ def get_data():
     client.close()
 
     # debug
-    log.info(datetime.datetime.now())
+    log.info("got data from mppt via modbus")
+    log.debug(datetime.datetime.now())
     for key in keys:
         log.debug("%-15s : %.2f" % (key, data[key]))
 
@@ -129,6 +130,7 @@ if __name__ == '__main__':
       exit(1)
 
   log.info("using feed number %d" % args.feed_id)
+  log.info("using tty %s" % args.tty)
 
   #fetch data
   data = get_data()
