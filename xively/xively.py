@@ -47,7 +47,7 @@ class xively(threading.Thread):
         self.payload['version'] = xively.version
         self.payload['id'] = self.feed_id
         self.payload['datastreams'] = self.data
-        url = self.url_base + self.feed_id + "?_method=put"
+        url = self.url_base + str(self.feed_id) + "?_method=put"
 
         try:
             self.opener.open(url, json.dumps(self.payload),
@@ -60,9 +60,9 @@ class xively(threading.Thread):
 
 
 if __name__ == '__main__':
-    feed_id = "130883"
+    feed_id = 75479
     xively_timeout = 10
     import logging
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     xively_t = xively(feed_id, logging, timeout=xively_timeout, uptime=True)
     xively_t.start()

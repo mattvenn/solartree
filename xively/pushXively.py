@@ -10,7 +10,7 @@ import logging
 import logging.handlers
 import argparse
 import fcntl
-import xively as xively
+from xively import xively
 
 keys = [ "batt-voltage", "batt-current", "array-voltage", "array-current", "batt-temp", "power-in", "power-out" ]
 
@@ -24,7 +24,7 @@ log.setLevel(logging.DEBUG)
 
 # create console handler and set level to info
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
 
 # create formatter for console
 cf = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -33,7 +33,7 @@ log.addHandler(ch)
 
 # create syslog handler and set to debug
 sh = logging.handlers.SysLogHandler(address = '/dev/log')
-sh.setLevel(logging.DEBUG)
+sh.setLevel(logging.INFO)
 
 # create formatter for syslog
 sf = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
@@ -65,7 +65,7 @@ def get_data():
     # the stuff we want (the numbers are decimal but the registers are listed in hex)
     data={}
     data["batt-voltage" ] = ( rr.registers[24] * float(v_scale )) / (2**15)	# 0x18
-    data["array_voltage" ] = ( rr.registers[27] * float(v_scale )) / (2**15)	# 0x1b
+    data["array-voltage" ] = ( rr.registers[27] * float(v_scale )) / (2**15)	# 0x1b
     data["batt-current" ] = ( rr.registers[28] * float(i_scale )) / (2**15)	# 0x1c
     data["array-current" ] = ( rr.registers[29] * float(i_scale )) / (2**15)	# 0x1d
     data["batt-temp" ] = rr.registers[37] 				# 0x25
@@ -78,7 +78,7 @@ def get_data():
     # debug
     log.info(datetime.datetime.now())
     for key in keys:
-        log.debug("%10s : %.2f" % (key, data[key]))
+        log.debug("%-15s : %.2f" % (key, data[key]))
 
     return data
 
