@@ -4,6 +4,7 @@ import json
 import datetime
 import logging
 import threading
+logging.basicConfig()
 
 class cursive_data(threading.Thread):
 
