@@ -17,3 +17,9 @@ port forwards (using twisted) http or modbus so that an ssh tunnel can connect f
 
 deps:
 twisted (comes with pymodbus)
+
+ssh
+---
+
+ssh tunnel setup for modbus like so:
+ssh matt@mattvenn.net -Rmattvenn.net:10000:localhost:8080
