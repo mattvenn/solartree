@@ -1,23 +1,21 @@
 #!/usr/bin/env python
 """
 todo:
-    only read the registers once, save transactions
 """
 
+import datetime
 import eeml
+from pymodbus.client.sync import ModbusSerialClient as ModbusClient
+import logging
 
-# parameters
+#cosm parameters
 API_KEY = 'lzH_J6nHkyOeB8MoJiZ5MK_QxOKSAKwxUGxVdU1UbitjUT0g'
 FEED = 75479
 API_URL = '/v2/feeds/{feednum}.xml' .format(feednum = FEED)
 
 pac = eeml.Pachube(API_URL, API_KEY)
 
-# import the server implementation
-from pymodbus.client.sync import ModbusSerialClient as ModbusClient
-
 # configure the client logging
-import logging
 logging.basicConfig()
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
@@ -42,14 +40,13 @@ battTemp = rr.registers[37]
 powerIn = ( rr.registers[59] * float(v_scale)*float(i_scale)) / (2**17)
 
 #debug
+print datetime.datetime.now()
 print "batt v: %.2f" % battV
 print "batt i: %.2f" % battI
 print "array v: %.2f" % arrayV
 print "array i: %.2f" % arrayI
 print "batt temp: %.2f" % battTemp
 print "power in: %.2f" % powerIn
-
-exit()
 
 print "push to cosm"
 pac.update([eeml.Data("batt-voltage", battV)])
