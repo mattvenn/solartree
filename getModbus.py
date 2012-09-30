@@ -98,7 +98,7 @@ def getBattV(v_scale):
     rr = client.read_holding_registers(24,1,1)
     return ( rr.registers[0] * float(v_scale )) / (2**15)
 
-def getTemp():
+def getBattTemp():
     rr = client.read_holding_registers(37,1,1)
     return rr.registers[0] 
 
@@ -110,7 +110,7 @@ battV = getBattV(v_scale)
 battI = getBattI(i_scale)
 arrayV = getArrayV(v_scale)
 arrayI = getArrayI(i_scale)
-temp = getTemp()
+temp = getBattTemp()
 powerIn = getPowerIn(v_scale,i_scale)
 
 print "batt v: %.2f" % battV
@@ -121,12 +121,12 @@ print "temp: %.2f" % temp
 print "power in: %.2f" % powerIn
 
 print "push to cosm"
-pac.update([eeml.Data(0, battV)])
-pac.update([eeml.Data(1, battI)])
-pac.update([eeml.Data(2, arrayV)])
-pac.update([eeml.Data(3, arrayI)])
-pac.update([eeml.Data("temp", temp)])
-pac.update([eeml.Data("power in", powerIn)])
+pac.update([eeml.Data("batt-voltage", battV)])
+pac.update([eeml.Data("batt-current", battI)])
+pac.update([eeml.Data("array-voltage", arrayV)])
+pac.update([eeml.Data("array-current", arrayI)])
+pac.update([eeml.Data("batt-temp", temp)])
+pac.update([eeml.Data("power-in", powerIn)])
 pac.put()
 print "done"
 
