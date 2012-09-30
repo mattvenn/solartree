@@ -1,0 +1,53 @@
+#!/bin/sh
+
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+
+start_modbus_forward() {
+	echo -n "Starting modbus forward: "
+	if start-stop-daemon --start --quiet --pidfile /var/run/tunnel.pid \
+            --background --make-pidfile --pidfile /var/run/modbus.pid \
+	    --exec /usr/bin/python -- /home/pi/solartree/portforward/pf.py
+	then
+	    echo started.
+	else
+	    echo
+	fi
+}
+
+stop_modbus_forward() {
+	echo -n "Stopping watchdog daemon: "
+	if start-stop-daemon --stop --quiet --pidfile /var/run/modbus.pid
+	then
+	    echo stopped.
+	else
+	    echo
+	fi
+}
+
+case "$1" in
+  start)
+	start_modbus_forward
+    ;;
+
+  stop)
+	stop_modbus_forward
+    ;;
+
+  restart)
+    $0 force-reload
+    ;;
+
+  force-reload)
+	stop_modbus_forward
+	sleep 1
+	start_modbus_forward
+    ;;
+
+  *)
+    echo "Usage: /etc/init.d/modbus.forward {start|stop|restart|force-reload}"
+    exit 1
+
+esac
+
+exit 0
