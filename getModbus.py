@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+"""
+todo:
+    only read the registers once, save transactions
+"""
+
 import eeml
 
 # parameters
