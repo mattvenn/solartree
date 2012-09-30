@@ -36,33 +36,24 @@ def getIScale():
 
 v_scale = getVScale()
 i_scale = getIScale()
-print v_scale
-print i_scale
-exit()
 
 def getArrayV(v_scale):
-    rr = client.read_holding_registers(27,1,1)
-    return ( rr.registers[0] * float(v_scale )) / (2**15)
+    return ( rr.registers[27] * float(v_scale )) / (2**15)
 
 def getArrayI(i_scale):
-    rr = client.read_holding_registers(29,1,1)
-    return ( rr.registers[0] * float(i_scale )) / (2**15)
+    return ( rr.registers[29] * float(i_scale )) / (2**15)
 
 def getBattI(i_scale):
-    rr = client.read_holding_registers(28,1,1)
-    return ( rr.registers[0] * float(i_scale )) / (2**15)
+    return ( rr.registers[28] * float(i_scale )) / (2**15)
 
 def getBattV(v_scale):
-    rr = client.read_holding_registers(24,1,1)
-    return ( rr.registers[0] * float(v_scale )) / (2**15)
+    return ( rr.registers[24] * float(v_scale )) / (2**15)
 
 def getBattTemp():
-    rr = client.read_holding_registers(37,1,1)
-    return rr.registers[0] 
+    return rr.registers[37] 
 
 def getPowerIn(v_scale,i_scale):
-    rr = client.read_holding_registers(59,1,1)
-    return ( rr.registers[0] * float(v_scale)*float(i_scale)) / (2**17)
+    return ( rr.registers[59] * float(v_scale)*float(i_scale)) / (2**17)
 
 battV = getBattV(v_scale)
 battI = getBattI(i_scale)
@@ -78,6 +69,7 @@ print "array i: %.2f" % arrayI
 print "temp: %.2f" % temp
 print "power in: %.2f" % powerIn
 
+exit()
 print "push to cosm"
 pac.update([eeml.Data("batt-voltage", battV)])
 pac.update([eeml.Data("batt-current", battI)])
