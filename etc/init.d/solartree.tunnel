@@ -3,13 +3,16 @@
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 SERVERIP=77.73.6.229
-FORWARDS="-R $SERVERIP:10000:localhost:8080 "
+FORWARDS="-R localhost:47000:localhost:22 -R $SERVERIP:10000:localhost:8080 "
+
+#/usr/bin/autossh -nN -M 0 matt@$SERVERIP $FORWARDS
+#exit
 
 start_ssh_tunnel() {
 	echo -n "Starting ssh tunnel: "
-	if start-stop-daemon --start --quiet --pidfile /var/run/tunnel.pid \
+	if start-stop-daemon --start  --pidfile /var/run/tunnel.pid \
             --background --make-pidfile --pidfile /var/run/tunnel.pid \
-	    --exec /usr/bin/autossh -- -M 0 -nN -p 22 matt@$SERVERIP $FORWARDS
+	    --exec /usr/bin/autossh -- -vv -nN -M 0 solartree@$SERVERIP $FORWARDS
 	then
 	    echo started.
 	else
