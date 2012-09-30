@@ -98,15 +98,27 @@ def getBattV(v_scale):
     rr = client.read_holding_registers(24,1,1)
     return ( rr.registers[0] * float(v_scale )) / (2**15)
 
+def getTemp():
+    rr = client.read_holding_registers(27,1,1)
+    return rr.registers[0] 
+
+def getPowerIn(v_scale,i_scale):
+    rr = client.read_holding_registers(59,1,1)
+    return ( rr.registers[0] * float(v_scale)*float(i_scale)) / (2**17)
+
 battV = getBattV(v_scale)
 battI = getBattI(i_scale)
 arrayV = getArrayV(v_scale)
 arrayI = getArrayI(i_scale)
+temp = getTemp()
+powerIn = getPowerIn(v_scale,i_scale)
 
 print "batt v: %.2f" % battV
 print "batt i: %.2f" % battI
 print "array v: %.2f" % arrayV
 print "array i: %.2f" % arrayI
+print "temp: %.2f" % temp
+print "power in: %.2f" % powerIn
 
 print "push to cosm"
 pac.update([eeml.Data(0, battV)])
