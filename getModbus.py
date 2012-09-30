@@ -99,7 +99,7 @@ def getBattV(v_scale):
     return ( rr.registers[0] * float(v_scale )) / (2**15)
 
 def getTemp():
-    rr = client.read_holding_registers(27,1,1)
+    rr = client.read_holding_registers(37,1,1)
     return rr.registers[0] 
 
 def getPowerIn(v_scale,i_scale):
