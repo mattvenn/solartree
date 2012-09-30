@@ -51,6 +51,7 @@ Host *
     HashKnownHosts yes
     GSSAPIAuthentication yes
     GSSAPIDelegateCredentials no
-ServerAliveInterval 20
+ServerAliveInterval 2
 ExitOnForwardFailure yes
 TCPKeepAlive yes
+ServerAliveCountMax 5
