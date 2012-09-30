@@ -125,6 +125,8 @@ pac.update([eeml.Data(0, battV)])
 pac.update([eeml.Data(1, battI)])
 pac.update([eeml.Data(2, arrayV)])
 pac.update([eeml.Data(3, arrayI)])
+pac.update([eeml.Data("temp", temp)])
+pac.update([eeml.Data("power in", powerIn)])
 pac.put()
 print "done"
 
