@@ -27,6 +27,11 @@ client.connect()
 #read the registers
 rr = client.read_holding_registers(0,60,1)
 
+if rr == None:
+    client.close()
+    print "couldn't connect"
+    exit(1)
+
 #scaling
 v_scale = rr.registers[0] + rr.registers[1]/(2**16)
 i_scale = rr.registers[2] + rr.registers[3]/(2**16)
