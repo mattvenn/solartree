@@ -26,16 +26,19 @@ log.setLevel(logging.DEBUG)
 client = ModbusClient(method='rtu', port='/dev/ttyUSB0', baudrate=9600, timeout=1)
 client.connect()
 
+rr = client.read_holding_registers(0,60,1)
+
 def getVScale():
-    rr = client.read_holding_registers(0,2,1)
     return rr.registers[0] + rr.registers[1]/(2**16)
   
 def getIScale():
-    rr = client.read_holding_registers(2,2,1)
-    return rr.registers[0] + rr.registers[1]/(2**16)
+    return rr.registers[2] + rr.registers[3]/(2**16)
 
 v_scale = getVScale()
 i_scale = getIScale()
+print v_scale
+print i_scale
+exit()
 
 def getArrayV(v_scale):
     rr = client.read_holding_registers(27,1,1)
