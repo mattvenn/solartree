@@ -4,30 +4,51 @@
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 SERVERIP=77.73.6.229
 FORWARDS="-R localhost:47000:localhost:22 -R $SERVERIP:10000:localhost:8080 "
+export AUTOSSH_GATETIME=0
+export AUTOSSH_LOGLEVEL=7
+export AUTOSSH_LOGFILE=/var/log/autossh.log
+PIDFILE=/var/run/tunnel.pid 
+DESC="autossh daemon"
 
-#/usr/bin/autossh -nN -M 0 matt@$SERVERIP $FORWARDS
-#exit
+is_running() {
+    if [ -f $PIDFILE ]; then
+        PID=`cat $PIDFILE`
+        if [ -n "$PID" ]; then
+            return 0
+        else
+            return 1
+        fi
+    else
+        return 1
+    fi
+}
 
 start_ssh_tunnel() {
-	echo -n "Starting ssh tunnel: "
-	if start-stop-daemon --start  --pidfile /var/run/tunnel.pid \
-            --background --make-pidfile --pidfile /var/run/tunnel.pid \
-	    --exec /usr/bin/autossh -- -vv -nN -M 0 solartree@$SERVERIP $FORWARDS
-	then
-	    echo started.
-	else
-	    echo
+	if ! is_running; then
+		echo -n "Starting $DESC:"
+		
+		if start-stop-daemon --start  --pidfile $PIDFILE \
+		    --background --make-pidfile --pidfile $PIDFILE \
+		    --exec /usr/bin/autossh -- -vv -nN -M 0 solartree@$SERVERIP $FORWARDS
+		then
+		    echo started.
+		else
+		    echo "something went wrong"
+		fi
+        else
+		echo "$DESC: already running (pid $PID)"
 	fi
 }
 
 stop_ssh_tunnel() {
-	echo -n "Stopping watchdog daemon: "
-	if start-stop-daemon --stop --quiet --pidfile /var/run/tunnel.pid
+	echo -n "Stopping $DESC: "
+	if start-stop-daemon --stop --pidfile $PIDFILE
 	then
 	    echo stopped.
 	else
 	    echo
 	fi
+	[ -f $PIDFILE ] && rm -f $PIDFILE
 }
 
 case "$1" in
@@ -42,6 +63,15 @@ case "$1" in
   restart)
     $0 force-reload
     ;;
+  status)
+        if is_running; then
+            echo "$DESC: running (pid $PID)"
+            exit 0
+        else
+            echo "$DESC: not running"
+	    exit 1
+        fi
+    ;;
 
   force-reload)
 	stop_ssh_tunnel
@@ -50,7 +80,7 @@ case "$1" in
     ;;
 
   *)
-    echo "Usage: /etc/init.d/solartree.tunnel {start|stop|restart|force-reload}"
+    echo "Usage: /etc/init.d/solartree.tunnel {start|stop|status|restart|force-reload}"
     exit 1
 
 esac
