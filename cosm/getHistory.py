@@ -7,10 +7,9 @@ import iso8601
 import dateutil.parser
 import argparse
 
-def fetchRange(start_date,end_date,key,feed_number,datafeeds_per_feed ):
+def fetchRange(start_date,end_date,key,feed_number):
     alldatapoints = {}
     per_page = 500 #seems limited to 500, tho docs say 1000
-    feed_number = 75479
     url = 'http://api.cosm.com/v2/feeds/%d.json' % feed_number
 
     while start_date < end_date:
@@ -80,11 +79,8 @@ if __name__ == '__main__':
     action='store', dest='keyfile', default="api.key",
       help="where the api key is stored")
   argparser.add_argument('--feed',
-    action='store', dest='feed', default = "75479", #default is for solar tree
+    action='store', dest='feed', type=int, default = 75479, #default is for solar tree
       help="feed number")
-  argparser.add_argument('--datastreamsperfeed',
-    action='store', dest='datastreamsperfeed', type=int, default = 6, #default is for solar tree
-      help="data streams per feed")
   argparser.add_argument('--start',
     action='store', dest='start',
       help="start date")
@@ -101,7 +97,7 @@ if __name__ == '__main__':
     keyfile = open(args.keyfile)
     key = keyfile.read()
     key = key.strip()
-    print "using key:\n", key
+    print "using key: ", key
   except:
     print "couldn't open key file", args.keyfile
     exit(1)
@@ -116,7 +112,7 @@ if __name__ == '__main__':
   end_date = dateutil.parser.parse(args.end,dayfirst=True)
 
   #fetch data
-  data = fetchRange(start_date,end_date,key,args.feed,args.datastreamsperfeed)
+  data = fetchRange(start_date,end_date,key,args.feed)
 
   #make a summary
   for key in data.keys():
