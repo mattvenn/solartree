@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if /etc/init.d/solartree.tunnel status; then
+		:
+	else
+		echo "autossh seems to be down -- restarting"
+		/etc/init.d/solartree.tunnel start
+	fi
