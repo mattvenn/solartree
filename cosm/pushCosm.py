@@ -33,6 +33,7 @@ def get_data():
     i_scale = rr.registers[2] + rr.registers[3]/(2**16)
 
     #the stuff we want
+    data={}
     data["arrayV" ] = ( rr.registers[27] * float(v_scale )) / (2**15)
     data["arrayI" ] = ( rr.registers[29] * float(i_scale )) / (2**15)
     data["battI" ] = ( rr.registers[28] * float(i_scale )) / (2**15)
