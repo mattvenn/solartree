@@ -1,0 +1,57 @@
+#!/bin/sh
+#this only works with the huwaei e1752
+
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.2-14) to ensure that this file is present
+# and status_of_proc is working.
+. /lib/lsb/init-functions
+
+DESC="3g modem"
+NAME=3g
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+VERBOSE=yes
+LOGFILE=/var/log/3g.log
+
+start_3g() {
+	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+	date >> $LOGFILE
+	/usr/bin/sakis3g --sudo connect USBINTERFACE="0" APN="3internet" 2>&1 >> $LOGFILE
+}
+
+stop_3g() {
+	[ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
+	/usr/bin/sakis3g --sudo disconnect 2>&1 >> $LOGFILE
+}
+
+case "$1" in
+  start)
+	start_3g
+    ;;
+
+  stop)
+	stop_3g
+    ;;
+
+  restart)
+	$0 force-reload
+    ;;
+  status)
+	/usr/bin/sakis3g --sudo info
+    ;;
+
+  force-reload)
+	stop_3g
+	sleep 1
+	start_3g
+    ;;
+
+  *)
+    echo "Usage: /etc/init.d/3g {start|stop|status|restart|force-reload}"
+    exit 1
+
+esac
+
+exit 0
