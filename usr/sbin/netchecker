@@ -1,4 +1,9 @@
 #!/usr/bin/python
+"""
+	todo:
+		add led heartbeat
+		when run from command line, works fine. when started by system, it hangs
+"""
 
 import signal
 import subprocess
@@ -11,6 +16,8 @@ def handler(signum, frame):
 	logger.warning("got term sig, quitting.")
 	exit(1)
 
+def alarm_handler(sugnum,frame):
+	logger.warning("ALARM!")
 
 sleep_time=60
 #reboot after this many bad connections
@@ -18,11 +25,22 @@ reboot_connections=5
 
 bad_connections=0
 timeout_time=5
+sakis_timeout=60
 sakis_args=["/usr/bin/sakis3g","--debug","--sudo", "connect", 'USBINTERFACE="0"', 'APN="3internet"'] #works
+
+class Alarm(Exception):
+	pass
 
 def start_3g():
 	logger.info("starting 3g with args" + ','.join(sakis_args))
-	p = subprocess.Popen(sakis_args, stdout=subprocess.PIPE)
+	signal.alarm(sakis_timeout)
+	try:
+		p = subprocess.Popen(sakis_args, stdout=subprocess.PIPE)
+		signal.alarm(0)
+	except Alarm:
+		logger.info("timeout on sakis")
+		return False
+
         stdout,stderr = p.communicate()
 
 	if stdout:
@@ -63,6 +81,8 @@ if __name__ == "__main__":
 	#register signal handler
 	signal.signal(signal.SIGTERM, handler)
 
+	#sakis timeout handler
+	signal.signal(signal.SIGALRM, alarm_handler)
 	start_3g()
 
 	#forever...
@@ -79,4 +99,5 @@ if __name__ == "__main__":
 			logger.warning("rebooting!")
 			system("/sbin/shutdown -r now")
 			exit(1)
+		logger.info("sleeping...")
 		sleep(sleep_time)
