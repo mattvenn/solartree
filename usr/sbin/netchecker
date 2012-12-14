@@ -1,10 +1,15 @@
 #!/usr/bin/python
 
+import signal
 import subprocess
 import urllib2
 from os import system
 from time import sleep
 import logging
+
+def handler(signum, frame):
+	logger.warning("got term sig, quitting.")
+	exit(1)
 
 
 sleep_time=60
@@ -34,22 +39,29 @@ def internet_on():
     try:
 	logger.info("making net connection...")
         response=urllib2.urlopen('http://google.co.uk',timeout=timeout_time)
-	logger.info("OK")
         return True
-    except urllib2.URLError as err: pass
-    return False
+    except urllib2.URLError as err:
+	logger.info("problem: %s" % err.args)
+	return False
 
 if __name__ == "__main__":
 	#start logging
 	logger = logging.getLogger('net checker')
-	hdlr = logging.FileHandler('/var/log/netcheck.log')
+	log_file = logging.FileHandler('/var/log/netcheck.log')
 	formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-	hdlr.setFormatter(formatter)
-	logger.addHandler(hdlr) 
+
+	log_file.setFormatter(formatter)
+	logger.addHandler(log_file) 
+	
+	log_stream = logging.StreamHandler()
+	log_stream.setFormatter(formatter)
+	logger.addHandler(log_stream)
+
 	logger.setLevel(logging.INFO)
 	logger.info('starting')
 
-	start_3g()
+	#register signal handler
+	signal.signal(signal.SIGTERM, handler)
 
 	#forever...
 	while True:
