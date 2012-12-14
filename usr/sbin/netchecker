@@ -18,7 +18,7 @@ reboot_connections=5
 
 bad_connections=0
 timeout_time=5
-sakis_args=["/usr/bin/sakis3g","--sudo", "connect", 'USBINTERFACE="0"', 'APN="3internet"'] #works
+sakis_args=["/usr/bin/sakis3g","--debug","--sudo", "connect", 'USBINTERFACE="0"', 'APN="3internet"'] #works
 
 def start_3g():
 	logger.info("starting 3g with args" + ','.join(sakis_args))
@@ -62,6 +62,8 @@ if __name__ == "__main__":
 
 	#register signal handler
 	signal.signal(signal.SIGTERM, handler)
+
+	start_3g()
 
 	#forever...
 	while True:
