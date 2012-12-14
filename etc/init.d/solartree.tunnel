@@ -1,5 +1,15 @@
 #!/bin/sh
 
+### BEGIN INIT INFO
+# Provides:          solartree.tunnel
+# Required-Start:    $syslog $network $local_fs
+# Required-Stop:     $syslog $network $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: reverse ssh tunnel mattvenn.net
+# Description:       
+### END INIT INFO
+
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 SERVERIP=77.73.6.229

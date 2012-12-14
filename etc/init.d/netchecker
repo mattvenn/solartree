@@ -1,13 +1,12 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          network checker
-# Required-Start:    $remote_fs $syslog
-# Required-Stop:     $remote_fs $syslog
+# Provides:          netchecker
+# Required-Start:    $syslog $network $local_fs
+# Required-Stop:     $syslog $network $local_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: network checker, reboots if necessary
-# Description:       This file should be used to construct scripts to be
-#                    placed in /etc/init.d.
+# Short-Description: provides 3g, reboots if necessary
+# Description:       
 ### END INIT INFO
 
 # Author: Matt Venn matt@mattvenn.net
@@ -35,6 +34,7 @@ SCRIPTNAME=/etc/init.d/$NAME
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
 
+VERBOSE=yes
 # Define LSB log_* functions.
 # Depend on lsb-base (>= 3.2-14) to ensure that this file is present
 # and status_of_proc is working.
