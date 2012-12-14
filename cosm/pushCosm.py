@@ -21,11 +21,11 @@ def get_data():
     client.connect()
 
     #read the registers
-    rr = client.read_holding_registers(0,60,unit=1)
+    rr = client.read_holding_registers(0,60,1)
 
     if rr == None:
         client.close()
-        print "couldn't read modbus"
+        print "couldn't connect"
         exit(1)
 
     #scaling
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     action='store', dest='keyfile', default="api.key",
       help="where the api key is stored")
   argparser.add_argument('--feed',
-    action='store', dest='feed', type=int, default = 81440, #default is for solar tree
+    action='store', dest='feed', type=int, default = 75479, #default is for solar tree
       help="feed number")
 
   args = argparser.parse_args()

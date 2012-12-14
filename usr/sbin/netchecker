@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import subprocess
 import urllib2
 from os import system
 from time import sleep
@@ -12,15 +13,34 @@ reboot_connections=5
 
 bad_connections=0
 timeout_time=5
+sakis_args=["/usr/bin/sakis3g","--sudo", "connect", 'USBINTERFACE="0"', 'APN="3internet"'] #works
+
+def start_3g():
+	logger.info("starting 3g with args" + ','.join(sakis_args))
+	p = subprocess.Popen(sakis_args, stdout=subprocess.PIPE)
+        stdout,stderr = p.communicate()
+
+	if stdout:
+		logger.info("sakis stdout: %s" % stdout.rstrip())
+	if stderr:
+		logger.info("sakis stderr: %s" % stderr.rstrip())
+
+	if stdout.find("connected"):
+		return True
+	else:
+		return False
 
 def internet_on():
     try:
+	logger.info("making net connection...")
         response=urllib2.urlopen('http://google.co.uk',timeout=timeout_time)
+	logger.info("OK")
         return True
     except urllib2.URLError as err: pass
     return False
 
 if __name__ == "__main__":
+	#start logging
 	logger = logging.getLogger('net checker')
 	hdlr = logging.FileHandler('/var/log/netcheck.log')
 	formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -29,6 +49,8 @@ if __name__ == "__main__":
 	logger.setLevel(logging.INFO)
 	logger.info('starting')
 
+	start_3g()
+
 	#forever...
 	while True:
 		if internet_on():
@@ -36,6 +58,8 @@ if __name__ == "__main__":
 			bad_connections=0
 		else:
 			logger.warning("internet failure! rebooting in %dsecs" % ((reboot_connections-bad_connections)*sleep_time))
+			#give the dongle a kick
+			start_3g()
 			bad_connections+=1
 		if bad_connections > reboot_connections:
 			logger.warning("rebooting!")
