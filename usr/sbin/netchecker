@@ -5,6 +5,15 @@
     when run from command line, works fine. when started by system, it hangs
 """
 
+sleep_time=60
+#reboot after this many bad connections
+reboot_connections=5
+
+bad_connections=0
+timeout_time=10 #for determining if internet is up
+sakis_timeout=80 #should take 60
+webpage='http://google.co.uk'
+
 import signal
 import subprocess
 import urllib2
@@ -22,14 +31,7 @@ def alarm_handler(sugnum,frame):
 class Alarm(Exception):
   pass
 
-sleep_time=60
-#reboot after this many bad connections
-reboot_connections=5
-
-bad_connections=0
-timeout_time=5
-sakis_timeout=60
-sakis_args=["/usr/bin/sakis3g","--debug","--sudo", "connect", 'USBINTERFACE="0"', 'APN="3internet"'] #works
+sakis_args=["/usr/bin/sakis3g","--sudo", "reconnect", 'USBINTERFACE="0"', 'APN="three.co.uk"', '--console'] #works removed --debug because it causes sakis to hang
 
 
 def start_3g():
@@ -55,8 +57,8 @@ def start_3g():
 
 def internet_on():
   try:
-    logger.info("making net connection...")
-    response=urllib2.urlopen('http://google.co.uk',timeout=timeout_time)
+    logger.info("fetching page %s" % webpage)
+    response=urllib2.urlopen(webpage,timeout=timeout_time)
     return True
   except urllib2.URLError as err:
     logger.info("problem: %s" % err.args)
