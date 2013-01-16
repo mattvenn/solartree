@@ -13,6 +13,6 @@ uptime_string=f.readline()
 uptime=uptime_string.split()[0]
 pac = eeml.Pachube(API_URL, API_KEY)
 print "push to cosm: update=%s" % uptime
-pac.update([eeml.Data("update", uptime)])
+pac.update([eeml.Data("uptime", uptime)])
 pac.put()
 print "done"
