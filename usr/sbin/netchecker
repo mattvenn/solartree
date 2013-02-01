@@ -14,6 +14,8 @@ timeout_time=10 #for determining if internet is up
 sakis_timeout=80 #should take 60
 webpage='http://google.co.uk'
 
+import time
+import traceback
 import signal
 import subprocess
 import urllib2
@@ -85,21 +87,27 @@ if __name__ == "__main__":
 
   #sakis timeout handler
   signal.signal(signal.SIGALRM, alarm_handler)
-  start_3g()
 
   #forever...
   while True:
-    if internet_on():
-      logger.info("internet connection OK")
-      bad_connections=0
-    else:
-      logger.warning("internet failure! rebooting in %dsecs" % ((reboot_connections-bad_connections)*sleep_time))
-      #give the dongle a kick
-      start_3g()
-      bad_connections+=1
-    if bad_connections > reboot_connections:
-      logger.warning("rebooting!")
-      system("/sbin/shutdown -r now")
-      exit(1)
-    logger.info("sleeping...")
-    sleep(sleep_time)
+    try:
+      if internet_on():
+        logger.info("internet connection OK")
+        bad_connections=0
+      else:
+        logger.warning("internet failure! rebooting in %dsecs" % ((reboot_connections-bad_connections)*sleep_time))
+        #give the dongle a kick
+        start_3g()
+        bad_connections+=1
+      if bad_connections > reboot_connections:
+        logger.warning("rebooting!")
+        system("/sbin/shutdown -r now")
+        exit(1)
+
+      logger.info("sleeping...")
+      sleep(sleep_time)
+
+    except Exception, e:
+      logger.warning("caught unhandled error")
+      logger.exception(e)
+      time.sleep(1)
