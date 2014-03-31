@@ -21,5 +21,24 @@ twisted (comes with pymodbus)
 ssh
 ---
 
+sudo apt-get install autossh
 ssh tunnel setup for modbus like so:
 ssh matt@mattvenn.net -Rmattvenn.net:10000:localhost:8080
+
+prep for sakis
+_____________
+
+sudo apt-get install libusb-dev
+sudo apt-get install ppp
+sakis3g recompile
+sudo cp sakis3g /usr/bin
+
+
+netchecker install and pre
+cp netchecker /usr/sbin/
+sudo update-rc.d netchecker defaults
+
+python stuff
+sudo apt-get install python-setuptools
+sudo easy_install pip
+sudo pip install mechanize
