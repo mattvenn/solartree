@@ -17,12 +17,13 @@ def get_data():
     log.setLevel(logging.DEBUG)
 
     # choose the serial client
-    client = ModbusClient(method='rtu', port='/dev/ttyUSB0', baudrate=9600, timeout=1)
+    client = ModbusClient(method='rtu', port=args.tty, baudrate=9600, timeout=args.timeout)
+
     client.connect()
+    print client
 
     #read the registers
     rr = client.read_holding_registers(0,60,1)
-
     if rr == None:
         client.close()
         print "couldn't connect"
@@ -73,9 +74,15 @@ def push_data(data):
 if __name__ == '__main__':
   argparser = argparse.ArgumentParser(
       description="fetches data via modbus and pushes to cosm")
+  argparser.add_argument('--tty',
+    action='store', dest='tty', default="/dev/ttyUSB0",
+      help="which serial tty is the tristar on")
   argparser.add_argument('--keyfile',
     action='store', dest='keyfile', default="api.key",
       help="where the api key is stored")
+  argparser.add_argument('--timeout',
+    action='store', dest='timeout', type=int, default = 15, 
+      help="serial timeout")
   argparser.add_argument('--feed',
     action='store', dest='feed', type=int, default = 75479, #default is for solar tree
       help="feed number")

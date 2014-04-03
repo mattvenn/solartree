@@ -1,0 +1,113 @@
+#!/usr/bin/python
+"""
+  todo:
+    add led heartbeat
+    when run from command line, works fine. when started by system, it hangs
+"""
+
+sleep_time=60
+#reboot after this many bad connections
+reboot_connections=5
+
+bad_connections=0
+timeout_time=10 #for determining if internet is up
+sakis_timeout=80 #should take 60
+webpage='http://google.co.uk'
+
+import time
+import traceback
+import signal
+import subprocess
+import urllib2
+from os import system
+from time import sleep
+import logging
+
+def handler(signum, frame):
+  logger.warning("got term sig, quitting.")
+  exit(1)
+
+def alarm_handler(sugnum,frame):
+  raise Alarm
+
+class Alarm(Exception):
+  pass
+
+sakis_args=["/usr/bin/sakis3g","--sudo", "reconnect", 'USBINTERFACE="0"', 'APN="three.co.uk"', '--console'] #works removed --debug because it causes sakis to hang
+
+
+def start_3g():
+  p = subprocess.Popen(sakis_args, stdout=subprocess.PIPE)
+  logger.info("starting 3g with args" + ','.join(sakis_args))
+  try:
+    signal.alarm(sakis_timeout)
+    stdout,stderr = p.communicate()
+    signal.alarm(0)
+  except Alarm:
+    logger.warning("timeout waiting for 3g")
+    return False
+
+  if stdout:
+    logger.info("sakis stdout: %s" % stdout.rstrip())
+  if stderr:
+    logger.info("sakis stderr: %s" % stderr.rstrip())
+
+  if stdout.find("connected"):
+    return True
+  else:
+    return False
+
+def internet_on():
+  try:
+    logger.info("fetching page %s" % webpage)
+    response=urllib2.urlopen(webpage,timeout=timeout_time)
+    return True
+  except urllib2.URLError as err:
+    logger.info("problem: %s" % err.args)
+    return False
+
+if __name__ == "__main__":
+  #start logging
+  logger = logging.getLogger('net checker')
+  log_file = logging.FileHandler('/var/log/netcheck.log')
+  formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+
+  log_file.setFormatter(formatter)
+  logger.addHandler(log_file) 
+  
+  log_stream = logging.StreamHandler()
+  log_stream.setFormatter(formatter)
+  logger.addHandler(log_stream)
+
+  logger.setLevel(logging.INFO)
+  logger.info('starting')
+
+  #register signal handler
+  signal.signal(signal.SIGTERM, handler)
+
+  #sakis timeout handler
+  signal.signal(signal.SIGALRM, alarm_handler)
+
+  #forever...
+  while True:
+    try:
+      if internet_on():
+        logger.info("internet connection OK")
+        bad_connections=0
+      else:
+        logger.warning("internet failure! rebooting in %dsecs" % ((reboot_connections-bad_connections)*sleep_time))
+        #give the dongle a kick
+        start_3g()
+        bad_connections+=1
+      if bad_connections > reboot_connections:
+        logger.warning("rebooting!")
+        system("/sbin/shutdown -r now")
+        exit(1)
+
+      logger.info("sleeping...")
+      sleep(sleep_time)
+
+    except Exception, e:
+      logger.warning("caught unhandled error")
+      logger.exception(e)
+      time.sleep(1)
