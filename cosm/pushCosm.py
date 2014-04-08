@@ -4,6 +4,7 @@ todo:
 """
 
 import datetime
+import os
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 import logging
 import argparse
@@ -101,7 +102,7 @@ if __name__ == '__main__':
   argparser = argparse.ArgumentParser(
       description="fetches data via modbus and pushes to cosm")
   argparser.add_argument('--tty',
-    action='store', dest='tty', default="/dev/ttyUSB3",
+    action='store', dest='tty',
       help="which serial tty is the tristar on")
   argparser.add_argument('--keyfile',
     action='store', dest='keyfile', default="api.key",
@@ -114,6 +115,14 @@ if __name__ == '__main__':
       help="feed number")
 
   args = argparser.parse_args()
+
+  if args.tty == None:
+	print("auto detect tty")
+	os.system("dmesg | grep 'pl2303.*ttyUSB' > /tmp/tty")
+	with open('/tmp/tty') as fh:
+		line = fh.readline()
+		args.tty = '/dev/ttyUSB' + line[-2]
+		print args.tty
 
   print "using feed number", args.feed
 
