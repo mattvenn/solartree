@@ -1,0 +1,1 @@
+@reboot cd solartree/3g; sudo sh -c './start.sh  >> /var/log/wvdial 2>&1'
