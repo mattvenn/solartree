@@ -4,10 +4,11 @@ todo:
 """
 
 import datetime
-import eeml
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 import logging
 import argparse
+
+from PachubeFeedUpdate import *
 
 
 def get_data():
@@ -23,7 +24,7 @@ def get_data():
     print client
 
     #read the registers
-    rr = client.read_holding_registers(0,60,1)
+    rr = client.read_holding_registers(0,count=60,unit=1)
     if rr == None:
         client.close()
         print "couldn't connect"
@@ -59,7 +60,10 @@ def get_data():
 def push_data(data):
     print "push to cosm"
     #cosm parameters
+
+
     API_URL = '/v2/feeds/{feednum}.xml' .format(feednum = args.feed)
+    """
     pac = eeml.Pachube(API_URL, key )
 
     pac.update([eeml.Data("batt-voltage", data["battV" ])])
@@ -69,13 +73,35 @@ def push_data(data):
     pac.update([eeml.Data("batt-temp", data["battTemp" ])])
     pac.update([eeml.Data("power-in", data["powerIn" ])])
     pac.put()
+    """
+
+    keyfile="/home/pi/solartree/cosm/api.key"
+    key=open(keyfile).readlines()[0].strip()
+    feed_id = "75479"
+
+    f=open("/proc/uptime","r");
+    uptime_string=f.readline()
+    uptime=uptime_string.split()[0]
+
+    pfu = PachubeFeedUpdate(feed_id,key)
+    pfu.addDatapoint('uptime', uptime)
+    pfu.addDatapoint("batt-voltage", data["battV"] )
+    pfu.addDatapoint("batt-current", data["battI"] )
+    pfu.addDatapoint("array-voltage", data["arrayV"] )
+    pfu.addDatapoint("array-current", data["arrayI"] )
+    pfu.addDatapoint("batt-temp", data["battTemp"])
+    pfu.addDatapoint("power-in", data["powerIn"] )
+
+    # finish up and submit the data
+    pfu.buildUpdate()
+    pfu.sendUpdate()
 
 
 if __name__ == '__main__':
   argparser = argparse.ArgumentParser(
       description="fetches data via modbus and pushes to cosm")
   argparser.add_argument('--tty',
-    action='store', dest='tty', default="/dev/ttyUSB0",
+    action='store', dest='tty', default="/dev/ttyUSB3",
       help="which serial tty is the tristar on")
   argparser.add_argument('--keyfile',
     action='store', dest='keyfile', default="api.key",
