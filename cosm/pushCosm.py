@@ -11,6 +11,7 @@ import argparse
 
 from PachubeFeedUpdate import *
 
+bad_data = 100 #current will never be this high
 
 def get_data():
     # configure the client logging
@@ -59,22 +60,15 @@ def get_data():
     return data
 
 def push_data(data):
+    if data["arrayI"] > bad_data:
+        print("bad data, not pushing")
+        return
+
     print "push to cosm"
     #cosm parameters
 
 
     API_URL = '/v2/feeds/{feednum}.xml' .format(feednum = args.feed)
-    """
-    pac = eeml.Pachube(API_URL, key )
-
-    pac.update([eeml.Data("batt-voltage", data["battV" ])])
-    pac.update([eeml.Data("batt-current", data["battI" ])])
-    pac.update([eeml.Data("array-voltage", data["arrayV" ])])
-    pac.update([eeml.Data("array-current", data["arrayI" ])])
-    pac.update([eeml.Data("batt-temp", data["battTemp" ])])
-    pac.update([eeml.Data("power-in", data["powerIn" ])])
-    pac.put()
-    """
 
     keyfile="/home/pi/solartree/cosm/api.key"
     key=open(keyfile).readlines()[0].strip()
