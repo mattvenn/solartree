@@ -6,6 +6,8 @@
 import mechanize
 import json
 import time
+import logging
+log = logging.getLogger('solartree')
 
 class PachubeFeedUpdate:
 
@@ -39,4 +41,6 @@ class PachubeFeedUpdate:
     try:
       self._opener.open(url,json.dumps(self._payload))
     except mechanize.HTTPError as e:
-      print "An HTTP error occurred: %s " % e
+      log.error("An HTTP error occurred: %s" % e)
+    except mechanize.URLError as e:
+      log.error("URL error: %s" % e)

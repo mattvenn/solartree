@@ -7,29 +7,51 @@ import datetime
 import os
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 import logging
+import logging.handlers
 import argparse
+import fcntl
+
+# configure the client logging
+log = logging.getLogger('solartree')
+# has to be set to debug as is the root logger
+log.setLevel(logging.DEBUG)
+
+
+# create console handler and set level to info
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+# create formatter for console
+cf = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(cf)
+log.addHandler(ch)
+
+# create syslog handler and set to debug
+sh = logging.handlers.SysLogHandler(address = '/dev/log')
+sh.setLevel(logging.DEBUG)
+
+# create formatter for syslog
+sf = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+sh.setFormatter(sf)
+log.addHandler(sh)
 
 from PachubeFeedUpdate import *
 
 bad_data = 100 #current will never be this high
 
 def get_data():
-    # configure the client logging
-    logging.basicConfig()
-    log = logging.getLogger()
-    log.setLevel(logging.DEBUG)
 
     # choose the serial client
     client = ModbusClient(method='rtu', port=args.tty, baudrate=9600, timeout=args.timeout)
 
     client.connect()
-    print client
+    log.debug(client)
 
     #read the registers
     rr = client.read_holding_registers(0,count=60,unit=1)
     if rr == None:
         client.close()
-        print "couldn't connect"
+        log.error("couldn't connect")
         exit(1)
 
     #scaling
@@ -49,22 +71,21 @@ def get_data():
     client.close()
 
     #debug
-    print datetime.datetime.now()
-    print "batt v: %.2f" % data["battV" ]
-    print "batt i: %.2f" % data["battI" ]
-    print "array v: %.2f" % data["arrayV" ]
-    print "array i: %.2f" % data["arrayI" ]
-    print "batt temp: %.2f" % data["battTemp" ]
-    print "power in: %.2f" % data["powerIn" ]
+    log.info(datetime.datetime.now())
+    log.info("batt v: %.2f" % data["battV" ])
+    log.info("batt i: %.2f" % data["battI" ])
+    log.info("array v: %.2f" % data["arrayV" ])
+    log.info("array i: %.2f" % data["arrayI" ])
+    log.info("batt temp: %.2f" % data["battTemp" ])
+    log.info("power in: %.2f" % data["powerIn" ])
 
     return data
 
 def push_data(data):
     if data["arrayI"] > bad_data:
-        print("bad data, not pushing")
+        log.error("bad data, not pushing")
         return
 
-    print "push to cosm"
     #cosm parameters
 
 
@@ -90,6 +111,7 @@ def push_data(data):
     # finish up and submit the data
     pfu.buildUpdate()
     pfu.sendUpdate()
+    log.info("pushed to cosm")
 
 
 if __name__ == '__main__':
@@ -110,24 +132,39 @@ if __name__ == '__main__':
 
   args = argparser.parse_args()
 
-  if args.tty == None:
-	print("auto detect tty")
-	os.system("dmesg | grep 'pl2303.*ttyUSB' > /tmp/tty")
-	with open('/tmp/tty') as fh:
-		line = fh.readline()
-		args.tty = '/dev/ttyUSB' + line[-2]
-		print args.tty
+  #locking
+  file = "/tmp/modbus.lock"
+  fd = open(file,'w')
+  try:
+      log.debug("check lock")
+      fcntl.lockf(fd,fcntl.LOCK_EX | fcntl.LOCK_NB)
+      log.debug("ok")
+  except IOError:
+      log.error("another process is running with lock. quitting!")
+      exit(1)
 
-  print "using feed number", args.feed
+  if args.tty == None:
+    os.system("dmesg | grep 'pl2303.*ttyUSB' > /tmp/tty")
+    try:
+        with open('/tmp/tty') as fh:
+            line = fh.readline()
+            args.tty = '/dev/ttyUSB' + line[-2]
+            log.info("auto detected tty as %s" % args.tty)
+    except IndexError as e:
+        log.error("couldn't detect serial usb adapter")
+        exit(1)
+    
+
+  log.info("using feed number %d" % args.feed)
 
   #load keyfile
   try:
     keyfile = open(args.keyfile)
     key = keyfile.read()
     key = key.strip()
-    print "using key: ", key
+    log.info("using key: %s" % key)
   except:
-    print "couldn't open key file", args.keyfile
+    log.error("couldn't open key file %s" % args.keyfile)
     exit(1)
 
   #fetch data
@@ -136,4 +173,4 @@ if __name__ == '__main__':
   #push data
   push_data(data)
 
-  print "done"
+  log.info("done")
