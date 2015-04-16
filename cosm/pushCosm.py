@@ -47,37 +47,40 @@ def get_data():
     client.connect()
     log.debug(client)
 
-    #read the registers
+    # read the registers
+    # for information about modbus registers see doc TSMPPT.APP.Modbus.EN.10.2.pdf
     rr = client.read_holding_registers(0,count=60,unit=1)
     if rr == None:
         client.close()
         log.error("couldn't connect")
         exit(1)
 
-    #scaling
+    # scaling
     v_scale = rr.registers[0] + rr.registers[1]/(2**16)
     i_scale = rr.registers[2] + rr.registers[3]/(2**16)
 
-    #the stuff we want
+    # the stuff we want (the numbers are decimal but the registers are listed in hex)
     data={}
-    data["arrayV" ] = ( rr.registers[27] * float(v_scale )) / (2**15)
-    data["arrayI" ] = ( rr.registers[29] * float(i_scale )) / (2**15)
-    data["battI" ] = ( rr.registers[28] * float(i_scale )) / (2**15)
-    data["battV" ] = ( rr.registers[24] * float(v_scale )) / (2**15)
-    data["battTemp" ] = rr.registers[37] 
-    data["powerIn" ] = ( rr.registers[59] * float(v_scale)*float(i_scale)) / (2**17)
+    data["battV" ] = ( rr.registers[24] * float(v_scale )) / (2**15)	# 0x18
+    data["arrayV" ] = ( rr.registers[27] * float(v_scale )) / (2**15)	# 0x1b
+    data["battI" ] = ( rr.registers[28] * float(i_scale )) / (2**15)	# 0x1c
+    data["arrayI" ] = ( rr.registers[29] * float(i_scale )) / (2**15)	# 0x1d
+    data["battTemp" ] = rr.registers[37] 				# 0x25
+    data["powerOut" ] = ( rr.registers[58] * float(v_scale)*float(i_scale)) / (2**17)	# 0x3a
+    data["powerIn" ] = ( rr.registers[59] * float(v_scale)*float(i_scale)) / (2**17)	# 0x3b
 
     # close the client
     client.close()
 
-    #debug
+    # debug
     log.info(datetime.datetime.now())
-    log.info("batt v: %.2f" % data["battV" ])
-    log.info("batt i: %.2f" % data["battI" ])
-    log.info("array v: %.2f" % data["arrayV" ])
-    log.info("array i: %.2f" % data["arrayI" ])
-    log.info("batt temp: %.2f" % data["battTemp" ])
-    log.info("power in: %.2f" % data["powerIn" ])
+    log.info("batt v    : %.2f" % data["battV"])
+    log.info("batt i    : %.2f" % data["battI"])
+    log.info("array v   : %.2f" % data["arrayV"])
+    log.info("array i   : %.2f" % data["arrayI"])
+    log.info("batt temp : %.2f" % data["battTemp"])
+    log.info("power in  : %.2f" % data["powerIn"])
+    log.info("power out : %.2f" % data["powerOut"])
 
     return data
 
@@ -86,7 +89,7 @@ def push_data(data):
         log.error("bad data, not pushing")
         return
 
-    #cosm parameters
+    # xively parameters
 
 
     API_URL = '/v2/feeds/{feednum}.xml' .format(feednum = args.feed)
@@ -107,16 +110,17 @@ def push_data(data):
     pfu.addDatapoint("array-current", data["arrayI"] )
     pfu.addDatapoint("batt-temp", data["battTemp"])
     pfu.addDatapoint("power-in", data["powerIn"] )
+    pfu.addDatapoint("power-out", data["powerOut"] )
 
     # finish up and submit the data
     pfu.buildUpdate()
     pfu.sendUpdate()
-    log.info("pushed to cosm")
+    log.info("pushed to xively")
 
 
 if __name__ == '__main__':
   argparser = argparse.ArgumentParser(
-      description="fetches data via modbus and pushes to cosm")
+      description="fetches data via modbus and pushes to xively")
   argparser.add_argument('--tty',
     action='store', dest='tty',
       help="which serial tty is the tristar on")
@@ -162,7 +166,7 @@ if __name__ == '__main__':
     keyfile = open(args.keyfile)
     key = keyfile.read()
     key = key.strip()
-    log.info("using key: %s" % key)
+    log.debug("using key: %s" % key)
   except:
     log.error("couldn't open key file %s" % args.keyfile)
     exit(1)
