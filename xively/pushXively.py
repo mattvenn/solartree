@@ -10,6 +10,11 @@ import logging
 import logging.handlers
 import argparse
 import fcntl
+import xively as xively
+
+keys = [ "batt-voltage", "batt-current", "array-voltage", "array-current", "batt-temp", "power-in", "power-out" ]
+
+
 
 # configure the client logging
 log = logging.getLogger('solartree')
@@ -35,12 +40,10 @@ sf = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 sh.setFormatter(sf)
 log.addHandler(sh)
 
-from PachubeFeedUpdate import *
 
 bad_data = 100 #current will never be this high
 
 def get_data():
-
     # choose the serial client
     client = ModbusClient(method='rtu', port=args.tty, baudrate=9600, timeout=args.timeout)
 
@@ -61,77 +64,55 @@ def get_data():
 
     # the stuff we want (the numbers are decimal but the registers are listed in hex)
     data={}
-    data["battV" ] = ( rr.registers[24] * float(v_scale )) / (2**15)	# 0x18
-    data["arrayV" ] = ( rr.registers[27] * float(v_scale )) / (2**15)	# 0x1b
-    data["battI" ] = ( rr.registers[28] * float(i_scale )) / (2**15)	# 0x1c
-    data["arrayI" ] = ( rr.registers[29] * float(i_scale )) / (2**15)	# 0x1d
-    data["battTemp" ] = rr.registers[37] 				# 0x25
-    data["powerOut" ] = ( rr.registers[58] * float(v_scale)*float(i_scale)) / (2**17)	# 0x3a
-    data["powerIn" ] = ( rr.registers[59] * float(v_scale)*float(i_scale)) / (2**17)	# 0x3b
+    data["batt-voltage" ] = ( rr.registers[24] * float(v_scale )) / (2**15)	# 0x18
+    data["array_voltage" ] = ( rr.registers[27] * float(v_scale )) / (2**15)	# 0x1b
+    data["batt-current" ] = ( rr.registers[28] * float(i_scale )) / (2**15)	# 0x1c
+    data["array-current" ] = ( rr.registers[29] * float(i_scale )) / (2**15)	# 0x1d
+    data["batt-temp" ] = rr.registers[37] 				# 0x25
+    data["power-out" ] = ( rr.registers[58] * float(v_scale)*float(i_scale)) / (2**17)	# 0x3a
+    data["power-in" ] = ( rr.registers[59] * float(v_scale)*float(i_scale)) / (2**17)	# 0x3b
 
     # close the client
     client.close()
 
     # debug
     log.info(datetime.datetime.now())
-    log.info("batt v    : %.2f" % data["battV"])
-    log.info("batt i    : %.2f" % data["battI"])
-    log.info("array v   : %.2f" % data["arrayV"])
-    log.info("array i   : %.2f" % data["arrayI"])
-    log.info("batt temp : %.2f" % data["battTemp"])
-    log.info("power in  : %.2f" % data["powerIn"])
-    log.info("power out : %.2f" % data["powerOut"])
+    for key in keys:
+        log.debug("%10s : %.2f" % (key, data[key]))
 
     return data
 
 def push_data(data):
-    if data["arrayI"] > bad_data:
+    if data["array-current"] > bad_data:
         log.error("bad data, not pushing")
         return
 
     # xively parameters
+    xively_t = xively(args.feed_id, logging, keyfile=args.keyfile, uptime=True)
 
+    for key in keys:
+        xively_t.add_datapoint(key, data[key])
 
-    API_URL = '/v2/feeds/{feednum}.xml' .format(feednum = args.feed)
-
-    keyfile="/home/pi/solartree/cosm/api.key"
-    key=open(keyfile).readlines()[0].strip()
-    feed_id = "75479"
-
-    f=open("/proc/uptime","r");
-    uptime_string=f.readline()
-    uptime=uptime_string.split()[0]
-
-    pfu = PachubeFeedUpdate(feed_id,key)
-    pfu.addDatapoint('uptime', uptime)
-    pfu.addDatapoint("batt-voltage", data["battV"] )
-    pfu.addDatapoint("batt-current", data["battI"] )
-    pfu.addDatapoint("array-voltage", data["arrayV"] )
-    pfu.addDatapoint("array-current", data["arrayI"] )
-    pfu.addDatapoint("batt-temp", data["battTemp"])
-    pfu.addDatapoint("power-in", data["powerIn"] )
-    pfu.addDatapoint("power-out", data["powerOut"] )
-
-    # finish up and submit the data
-    pfu.buildUpdate()
-    pfu.sendUpdate()
-    log.info("pushed to xively")
+    xively_t.start()
 
 
 if __name__ == '__main__':
   argparser = argparse.ArgumentParser(
       description="fetches data via modbus and pushes to xively")
   argparser.add_argument('--tty',
-    action='store', dest='tty',
+    action='store', dest='tty', required=True,
       help="which serial tty is the tristar on")
+#  argparser.add_argument('--no-modbus',
+#    action='store_const', dest='no_modbus', const=True, default=False,
+#      help="don't try to use modbus")
   argparser.add_argument('--keyfile',
-    action='store', dest='keyfile', default="api.key",
+    action='store', dest='keyfile', default="xively.key",
       help="where the api key is stored")
   argparser.add_argument('--timeout',
     action='store', dest='timeout', type=int, default = 15, 
       help="serial timeout")
-  argparser.add_argument('--feed',
-    action='store', dest='feed', type=int, default = 75479, #default is for solar tree
+  argparser.add_argument('--feed-id',
+    action='store', dest='feed_id', type=int, default = 75479, #default is for solar tree
       help="feed number")
 
   args = argparser.parse_args()
@@ -147,33 +128,10 @@ if __name__ == '__main__':
       log.error("another process is running with lock. quitting!")
       exit(1)
 
-  if args.tty == None:
-    os.system("dmesg | grep 'pl2303.*ttyUSB' > /tmp/tty")
-    try:
-        with open('/tmp/tty') as fh:
-            line = fh.readline()
-            args.tty = '/dev/ttyUSB' + line[-2]
-            log.info("auto detected tty as %s" % args.tty)
-    except IndexError as e:
-        log.error("couldn't detect serial usb adapter")
-        exit(1)
-    
-
-  log.info("using feed number %d" % args.feed)
-
-  #load keyfile
-  try:
-    keyfile = open(args.keyfile)
-    key = keyfile.read()
-    key = key.strip()
-    log.debug("using key: %s" % key)
-  except:
-    log.error("couldn't open key file %s" % args.keyfile)
-    exit(1)
+  log.info("using feed number %d" % args.feed_id)
 
   #fetch data
   data = get_data()
-
   #push data
   push_data(data)
 
