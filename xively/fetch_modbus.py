@@ -18,7 +18,7 @@ keys = [ "batt-voltage", "batt-current", "array-voltage", "array-current", "batt
 
 
 # configure the client logging
-log = logging.getLogger('xively')
+log = logging.getLogger(__name__)
 # has to be set to debug as is the root logger
 log.setLevel(logging.DEBUG)
 
