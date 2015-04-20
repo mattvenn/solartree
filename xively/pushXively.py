@@ -100,6 +100,8 @@ def push_data(data):
         datastore_id = 13
         key = 'value'
         value = data["power-out"]
+        log.info("power-out: %s" % data["power-out"])
+
 
         cd = cursive_data(datastore_id)
         cd.add_datapoint(key, value)
